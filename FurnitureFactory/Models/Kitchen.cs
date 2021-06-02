@@ -8,7 +8,7 @@ namespace FurnitureFactory.Models
         public int Id { get; set; }
         public double Cost { get; set; }
         
-        public IEnumerable<KitchenModule> KitchenModules { get; set; }
+        public IEnumerable<KitchenFurnitureModule> KitchenFurnitureModules { get; set; }
         public IEnumerable<Order> Orders { get; set; }
     }
 }

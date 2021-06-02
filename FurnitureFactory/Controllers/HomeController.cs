@@ -22,7 +22,7 @@ namespace FurnitureFactory.Controllers
 
         public IActionResult Index()
         {
-            return View(_dbContext.Modules.OrderBy(item => item.Name).ToList());
+            return View(_dbContext.FurnitureModules.OrderBy(item => item.Name).ToList());
         }
 
         public IActionResult Privacy()
