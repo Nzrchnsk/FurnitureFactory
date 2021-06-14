@@ -1,6 +1,4 @@
-using Microsoft.AspNetCore.Http;
-
-namespace FurnitureFactory.DTO
+namespace FurnitureFactory.DTO.Module
 {
     public class EditModuleDTO : CreateModuleDTO
     {

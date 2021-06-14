@@ -5,7 +5,9 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using AutoMapper.EquivalencyExpression;
 using FurnitureFactory.Data;
+using FurnitureFactory.Initializers;
 using FurnitureFactory.Models;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
@@ -28,12 +30,12 @@ namespace FurnitureFactory
             Configuration = configuration;
         }
 
-        public IConfiguration Configuration { get; }
+        public static IConfiguration Configuration { get; set; }
 
-        private readonly string CorsPolice = "AllowOrigin";
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
+            services.AddCors();
             services.AddDbContext<FurnitureFactoryDbContext>(options => options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
             
             //Add custom Identity
@@ -99,9 +101,14 @@ namespace FurnitureFactory
                         ValidateIssuerSigningKey = true,
                     };
                 });
-            services.AddCors(options => 
-                options.AddPolicy(CorsPolice, options => options.AllowAnyOrigin()));
+            services.AddTransient<MigrationInitializer>();
             services.AddControllersWithViews();
+            
+            services.AddAutoMapper(e =>
+            {
+                e.AddProfile<AutoMapperProfile>();
+                e.AddCollectionMappers();
+            });
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.
@@ -121,6 +128,11 @@ namespace FurnitureFactory
             app.UseStaticFiles();
 
             app.UseRouting();
+            app.UseCors(x => x
+                .AllowAnyMethod()
+                .AllowAnyHeader()
+                .SetIsOriginAllowed(origin => true) 
+                .AllowCredentials()); 
 
             app.UseAuthentication();
             app.UseAuthorization();
