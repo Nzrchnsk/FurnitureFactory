@@ -12,10 +12,7 @@ namespace FurnitureFactory.Models
 
         public DateTime CratedAt { get; set; } = DateTime.Now;
 
-        /// <summary>
-        /// 0-new, 1-accepted, 2-canceled, 3-returned
-        /// </summary>
-        public int Status { get; set; }
+        public bool IsSale { get; set; }
 
         public double Sale { get; set; }
         public double TotalCast { get; set; }

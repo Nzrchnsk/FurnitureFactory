@@ -15,7 +15,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace FurnitureFactory.Controllers
 {
     [ApiController]
-    [Route("api/module")]
+    [Route("api/modules")]
     [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
     [Authorize(Roles = Rolse.Admin)]
     public class FurnitureModuleController : ControllerBase
