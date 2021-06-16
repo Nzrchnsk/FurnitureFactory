@@ -38,6 +38,21 @@ namespace FurnitureFactory
             }
         }
 
+        public static async Task DeleteFile(string[] directory, string fileName)
+        {
+            var path = GetPathWithFileName(directory, fileName);
+            {
+                try
+                {
+                    if (File.Exists(path)) File.Delete(path);
+                }
+                catch (Exception e)
+                {
+                    throw new Exception("Error to delete file");
+                }
+            }
+        }
+
         public static string GetPathWithFileName(string[] directory, string fileName)
         {
             try

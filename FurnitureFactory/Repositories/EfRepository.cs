@@ -40,6 +40,15 @@ namespace FurnitureFactory.Repositories
             return await _dbContext.Set<T>().CountAsync();
         }
 
+        public async Task<List<T>> AddAsyncRange(List<T> entity)
+        {
+            await _dbContext.Set<T>().AddRangeAsync(entity);
+            await _dbContext.SaveChangesAsync();
+
+            return entity;
+        }
+
+        
         public async Task<T> AddAsync(T entity)
         {
             await _dbContext.Set<T>().AddAsync(entity);

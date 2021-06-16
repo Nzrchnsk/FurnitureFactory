@@ -8,15 +8,19 @@ using System.Threading.Tasks;
 using AutoMapper.EquivalencyExpression;
 using FurnitureFactory.Data;
 using FurnitureFactory.Initializers;
+using FurnitureFactory.Interfaces;
 using FurnitureFactory.Models;
+using FurnitureFactory.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.HttpsPolicy;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.FileProviders;
 using Microsoft.Extensions.Hosting;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
@@ -36,12 +40,26 @@ namespace FurnitureFactory
         public void ConfigureServices(IServiceCollection services)
         {
             services.AddCors();
-            services.AddDbContext<FurnitureFactoryDbContext>(options => options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
-            
+
+            services.AddControllers().AddNewtonsoftJson(options =>
+                options.SerializerSettings.ReferenceLoopHandling = Newtonsoft.Json.ReferenceLoopHandling.Ignore);
+
+            services.AddDbContext<FurnitureFactoryDbContext>(options =>
+                options.UseSqlServer(Configuration.GetConnectionString("DefaultConnection")));
+
             //Add custom Identity
-            services.AddIdentity<User, IdentityRole<int>>()
+            services.AddIdentity<User, IdentityRole<int>>(opts =>
+                {
+                    #region Настройки валидации пароля
+                    opts.Password.RequiredLength = 1; // минимальная длина
+                    opts.Password.RequireNonAlphanumeric = false; // требуются ли не алфавитно-цифровые символы
+                    opts.Password.RequireLowercase = false; // требуются ли символы в нижнем регистре
+                    opts.Password.RequireUppercase = false; // требуются ли символы в верхнем регистре
+                    opts.Password.RequireDigit = false; // требуются ли цифры
+                    #endregion
+                })
                 .AddEntityFrameworkStores<FurnitureFactoryDbContext>();
-            
+
             //Add api documentation
             services.AddSwaggerGen(c =>
             {
@@ -74,16 +92,14 @@ namespace FurnitureFactory
                             Scheme = "oauth2",
                             Name = "Bearer",
                             In = ParameterLocation.Header,
-
                         },
                         new List<string>()
                     }
                 });
-
             });
-            
+
             services.AddSwaggerGenNewtonsoftSupport();
-            
+
             services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
                 .AddJwtBearer(options =>
                 {
@@ -101,9 +117,10 @@ namespace FurnitureFactory
                         ValidateIssuerSigningKey = true,
                     };
                 });
+            services.AddScoped(typeof(IAsyncRepository<>), typeof(EfRepository<>));
+
             services.AddTransient<MigrationInitializer>();
-            services.AddControllersWithViews();
-            
+
             services.AddAutoMapper(e =>
             {
                 e.AddProfile<AutoMapperProfile>();
@@ -124,20 +141,31 @@ namespace FurnitureFactory
                 // The default HSTS value is 30 days. You may want to change this for production scenarios, see https://aka.ms/aspnetcore-hsts.
                 app.UseHsts();
             }
+
             app.UseHttpsRedirection();
-            app.UseStaticFiles();
+            app.UseDirectoryBrowser(new DirectoryBrowserOptions()
+            {
+                FileProvider = new PhysicalFileProvider(Path.Combine(env.WebRootPath, "upload", "module")),
+
+                RequestPath = "/img"
+            });
+            app.UseStaticFiles(new StaticFileOptions
+            {
+                FileProvider = new PhysicalFileProvider(Path.Combine(env.WebRootPath, "upload", "module")),
+                RequestPath = "/img"
+            });
 
             app.UseRouting();
             app.UseCors(x => x
                 .AllowAnyMethod()
                 .AllowAnyHeader()
-                .SetIsOriginAllowed(origin => true) 
-                .AllowCredentials()); 
+                .SetIsOriginAllowed(origin => true)
+                .AllowCredentials());
 
             app.UseAuthentication();
             app.UseAuthorization();
 
-                
+
             app.UseSwagger();
             app.UseSwaggerUI(c => { c.SwaggerEndpoint("/swagger/v1/swagger.json", "FurnitureFactory API"); });
             app.UseCors(options => options.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());

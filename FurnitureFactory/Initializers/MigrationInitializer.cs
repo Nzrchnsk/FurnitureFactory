@@ -23,7 +23,7 @@ namespace FurnitureFactory.Initializers
                 {
                     Name = "Стол",
                     Price = 100.0,
-                    Description ="Кхоный"
+                    Description ="Кухонный"
                 });
                 _сontext.FurnitureModules.Add(new Module()
                 {

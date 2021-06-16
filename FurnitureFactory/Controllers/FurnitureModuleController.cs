@@ -6,6 +6,7 @@ using AutoMapper;
 using FurnitureFactory.Data;
 using FurnitureFactory.DTO.Module;
 using FurnitureFactory.Initializers;
+using FurnitureFactory.Interfaces;
 using FurnitureFactory.Models;
 using FurnitureFactory.Repositories;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -17,14 +18,13 @@ namespace FurnitureFactory.Controllers
     [ApiController]
     [Route("api/modules")]
     [Authorize(AuthenticationSchemes = JwtBearerDefaults.AuthenticationScheme)]
-    [Authorize(Roles = Rolse.Admin)]
-    public class FurnitureModuleController : ControllerBase
+    public class ModuleController : ControllerBase
     {
         private readonly FurnitureFactoryDbContext _context;
-        private readonly EfRepository<Module> _repository;
+        private readonly IAsyncRepository<Module> _repository;
         private readonly IMapper _mapper;
 
-        public FurnitureModuleController(FurnitureFactoryDbContext context, EfRepository<Module> repository,
+        public ModuleController(FurnitureFactoryDbContext context, IAsyncRepository<Module> repository,
             IMapper mapper)
         {
             _repository = repository;
@@ -34,24 +34,22 @@ namespace FurnitureFactory.Controllers
 
         [AllowAnonymous]
         [HttpGet]
-        [Route("list")]
-        public ActionResult<List<ModuleDto>> GetList() =>
-            _context.FurnitureModules.ToList().Select(module => new ModuleDto
-                    {Id = module.Id, Name = module.Name, Price = module.Price, Image = module.Photo})
-                .ToList();
-
+        [Route("")]
+        public ActionResult<List<Module>> GetList() => _context.FurnitureModules.ToList();
 
         [HttpPost("")]
-        public async Task<ActionResult> Post([FromBody] CreateModuleDTO createModuleDto)
+        [Authorize(Roles = Rolse.Admin)]
+        public async Task<ActionResult> Post([FromForm] CreateModuleDTO createModuleDto)
         {
-            var fileName = createModuleDto.ImageFile.GetHashFileName();
-            await FileHelper.CreateFile(new[] {"upload", "module"}, fileName, createModuleDto.ImageFile);
+            var fileName = createModuleDto.Photo.GetHashFileName();
+            await FileHelper.CreateFile(new[] {"upload", "module"}, fileName, createModuleDto.Photo);
 
             var module = new Module
             {
                 Name = createModuleDto.Name,
                 Price = createModuleDto.Price,
-                Photo = fileName
+                Photo = fileName,
+                Description = createModuleDto.Description
             };
 
             try
@@ -68,7 +66,8 @@ namespace FurnitureFactory.Controllers
         }
 
         [HttpPut("{id:int}")]
-        public async Task<ActionResult> Put([FromBody] EditModuleDTO editModuleDto, int id)
+        [Authorize(Roles = Rolse.Admin)]
+        public async Task<ActionResult> Put([FromForm] EditModuleDTO editModuleDto, int id)
         {
             var module = await _repository.GetByIdAsync(id);
             if (module is null)
@@ -76,8 +75,18 @@ namespace FurnitureFactory.Controllers
                 return BadRequest();
             }
 
+            if (editModuleDto.Photo is not null)
+            {
+                var fileName = editModuleDto.Photo.GetHashFileName();
+                if (module.Photo is not null)
+                    await FileHelper.DeleteFile(new[] {"upload", "module"}, module.Photo);
+                await FileHelper.CreateFile(new[] {"upload", "module"}, fileName, editModuleDto.Photo);
+                module.Photo = fileName;
+            }
+
             module.Name = editModuleDto.Name;
             module.Price = editModuleDto.Price;
+            module.Description = editModuleDto.Description;
             await _repository.UpdateAsync(module);
             return Ok();
         }
@@ -85,23 +94,27 @@ namespace FurnitureFactory.Controllers
         [HttpGet("{id:int}")]
         public async Task<ActionResult<ModuleDto>> Get(int id)
         {
-            var module =  await _repository.GetByIdAsync(id);
+            var module = await _repository.GetByIdAsync(id);
             if (module is null)
             {
                 return NotFound();
             }
 
-            return Ok(_mapper.Map<ModuleDto>(module));
+            module.Photo = $"{Request.Scheme}://{Request.Host}/img/{module.Photo}";
+            return Ok(module);
         }
 
+        [Authorize(Roles = Rolse.Admin)]
         [HttpDelete("{id:int}")]
-        public ActionResult Delete([FromRoute] int id)
+        public async Task<ActionResult> Delete([FromRoute] int id)
         {
             var module = _context.FurnitureModules.FirstOrDefault(x => x.Id == id);
             if (module is null)
             {
                 return BadRequest();
             }
+            await FileHelper.DeleteFile(new[] {"upload", "module"}, module.Photo);
+
 
             _context.FurnitureModules.Remove(module);
             _context.SaveChanges();
