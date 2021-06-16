@@ -54,6 +54,6 @@ namespace FurnitureFactory.Controllers
             }
 
             return BadRequest();
-        }
+        }   
     }
 }

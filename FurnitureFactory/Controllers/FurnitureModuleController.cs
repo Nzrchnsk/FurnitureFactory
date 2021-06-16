@@ -21,10 +21,10 @@ namespace FurnitureFactory.Controllers
     public class FurnitureModuleController : ControllerBase
     {
         private readonly FurnitureFactoryDbContext _context;
-        private readonly EfRepository<FurnitureModule> _repository;
+        private readonly EfRepository<Module> _repository;
         private readonly IMapper _mapper;
 
-        public FurnitureModuleController(FurnitureFactoryDbContext context, EfRepository<FurnitureModule> repository,
+        public FurnitureModuleController(FurnitureFactoryDbContext context, EfRepository<Module> repository,
             IMapper mapper)
         {
             _repository = repository;
@@ -37,7 +37,7 @@ namespace FurnitureFactory.Controllers
         [Route("list")]
         public ActionResult<List<ModuleDto>> GetList() =>
             _context.FurnitureModules.ToList().Select(module => new ModuleDto
-                    {Id = module.Id, Name = module.Name, Price = module.Price, Image = module.Image})
+                    {Id = module.Id, Name = module.Name, Price = module.Price, Image = module.Photo})
                 .ToList();
 
 
@@ -47,11 +47,11 @@ namespace FurnitureFactory.Controllers
             var fileName = createModuleDto.ImageFile.GetHashFileName();
             await FileHelper.CreateFile(new[] {"upload", "module"}, fileName, createModuleDto.ImageFile);
 
-            var module = new FurnitureModule
+            var module = new Module
             {
                 Name = createModuleDto.Name,
                 Price = createModuleDto.Price,
-                Image = fileName
+                Photo = fileName
             };
 
             try

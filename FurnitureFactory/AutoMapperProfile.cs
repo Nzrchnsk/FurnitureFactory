@@ -10,8 +10,8 @@ namespace FurnitureFactory
         public AutoMapperProfile()
         {
             CreateMap<User, UserDto>();
-            CreateMap<FurnitureModule, ModuleDto>();
-            CreateMap< ModuleDto, FurnitureModule>();
+            CreateMap<Module, ModuleDto>();
+            CreateMap< ModuleDto, Module>();
         }
     }
 }

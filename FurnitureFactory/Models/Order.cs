@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 
 namespace FurnitureFactory.Models
 {
@@ -6,13 +7,10 @@ namespace FurnitureFactory.Models
     {
         public int Id { get; set; }
 
-        public int KitchenId { get; set; }
-        public Kitchen Kitchen { get; set; }
+        public int UserId { get; set; }
+        public User User { get; set; }
 
-        public string ClientName { get; set; }
-        public string ClientPhone { get; set; }
-
-        public DateTime Date { get; set; }
+        public DateTime CratedAt { get; set; } = DateTime.Now;
 
         /// <summary>
         /// 0-new, 1-accepted, 2-canceled, 3-returned
@@ -20,7 +18,9 @@ namespace FurnitureFactory.Models
         public int Status { get; set; }
 
         public double Sale { get; set; }
-        public double Amount { get; set; }
+        public double TotalCast { get; set; }
+
+        public List<Sale> Sales { get; set; }
 
     }
 }
